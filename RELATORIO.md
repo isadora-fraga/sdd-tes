@@ -30,6 +30,14 @@
 - Quando alterei coisas depois do desenvolvimento já pronto, não voltou a atualizar as
   specs mais.
 
+## Resultado do teste comparativo (tutor vs. Gem vs. Gemini)
+
+- Testando no meu tutor e num Gem com instruções similares, não consegui quebrar nenhum
+  dos dois e conseguir uma resposta direta.
+- Usando o Gemini direto (chat comum) ou o modo Learning, consegui.
+- Ainda não vi a grande diferença entre o Gem e o meu projeto, mas serviu pra aprender o
+  SDD.
+
 ## Melhorias de escopo já identificadas para trabalhos futuros
 
 - Respostas do tutor muito básicas, sem citar COMO o estudante pode aprofundar o
