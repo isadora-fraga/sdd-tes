@@ -4,6 +4,8 @@
 
 - GitHub Spec Kit
 - Claude Code — modelo Sonnet 5, modo "high", no VSCode
+- Google Stitch — usado para gerar a UI; o código foi exportado e depois importado no
+  projeto com adaptações
 
 ## Observações sobre o processo com a IA
 
