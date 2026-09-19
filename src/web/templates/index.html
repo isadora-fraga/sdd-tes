@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SocraticPy — Tutor Socrático de Programação</title>
+<!--
+  Layout adaptado de um export do Google Stitch (visual) para esta aplicação Flask real
+  (User Story 5 / FR-015). Mantém a estética original; a lógica de conversa falsa/simulada
+  do export foi substituída por chamadas reais a /session e /session/<id>/round
+  (contracts/web-api-contract.md). Sem build step, sem login, uso local apenas
+  (constitution, Princípio V).
+-->
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Geist', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              850: '#151f32',
+              950: '#0b1120'
+            }
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    [disabled] { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body class="bg-[#f8fafc] font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+<!-- 1. Top Navbar -->
+<header class="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-800 z-50 px-5 flex items-center justify-between shadow-sm transition-all">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-300 font-mono font-bold text-sm flex items-center justify-center shadow-xs">λ</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-mono font-bold text-sm text-white tracking-tight">SocraticPy</span>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800 font-medium">Tutor Socrático</span>
+</div>
+</div>
+</div>
+<div class="hidden sm:flex items-center text-xs font-medium text-slate-400 pl-3 border-l border-slate-800 gap-2">
+<span class="text-slate-200 font-medium" id="exercise-label">Nenhuma sessão iniciada</span>
+<span class="text-slate-600">•</span>
+<span class="font-mono text-sky-300 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/80 text-[11px]" id="file-label">sessao.py</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 text-xs text-slate-300">
+<span class="material-symbols-outlined text-amber-400 text-[16px]">lightbulb</span>
+<span class="text-slate-300 font-medium">Dicas</span>
+<span class="font-semibold text-white font-mono" id="hints-counter">0/5</span>
+<div class="flex items-center gap-1 ml-1" id="hints-dots">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 transition-colors" id="reset-session-btn" title="Reiniciar sessão">
+<span class="material-symbols-outlined text-[15px]">refresh</span>
+<span class="hidden md:inline">Reiniciar</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-medium transition-all shadow-xs" id="done-btn" title="Confirmar sucesso (quando não há testes automatizados)">
+<span>/done</span>
+</button>
+<div class="h-4 w-px bg-slate-800 mx-0.5"></div>
+<div class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 text-sky-300 flex items-center justify-center font-semibold text-xs shadow-xs" title="Aluno">
+      A
+    </div>
+</div>
+</header>
+<div class="pt-14 flex flex-1">
+<!-- Sidebar (majoritariamente decorativa nesta versão — sem listagem de múltiplas sessões no backend) -->
+<aside class="fixed left-0 top-14 bottom-0 w-64 bg-[#fbfcfd] border-r border-slate-200/80 p-3 flex flex-col justify-between z-30">
+<div class="flex flex-col gap-3">
+<div class="p-2.5 rounded-xl bg-white border border-slate-200/70 shadow-xs flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 font-mono font-bold flex items-center justify-center text-sm border border-sky-100">λ</div>
+<div class="flex flex-col">
+<span class="font-mono text-xs font-semibold text-slate-900 leading-tight">SocraticPy</span>
+<span class="text-[11px] text-sky-700 font-medium">Tutor Socrático</span>
+</div>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">v0.1</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="px-2 pt-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sessão de Estudo</span>
+<nav class="flex flex-col gap-0.5 mt-0.5"><a class="flex items-center justify-between px-2.5 py-2 rounded-xl bg-sky-50/70 text-sky-900 border border-sky-200/60 font-medium text-xs shadow-xs transition-colors" href="#">
+<div class="flex items-center gap-2 truncate">
+<span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 ring-2 ring-emerald-100"></span>
+<span class="truncate font-medium" id="sidebar-exercise-label">Nenhuma sessão</span>
+</div>
+<span class="text-[10px] font-mono text-sky-700 bg-white/80 px-1.5 py-0.5 rounded border border-sky-200/50">Atual</span>
+</a>
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors" href="#" id="new-exercise-link">
+<span class="material-symbols-outlined text-[16px] text-slate-400">add_circle</span>
+<span>+ Novo Exercício</span>
+</a></nav>
+</div>
+<div class="flex flex-col gap-1 pt-2 border-t border-slate-200/60">
+<div class="px-2 flex items-center justify-between">
+<span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-slate-400">terminal</span>
+              Comandos
+            </span>
+</div>
+<div class="px-2 flex flex-col gap-1 text-[11px] font-mono text-slate-500">
+<span><span class="text-sky-700">/done</span> — confirma sucesso sem testes</span>
+<span>Botão <span class="text-sky-700">Reiniciar</span> — nova sessão</span>
+</div>
+</div>
+</div>
+<p class="px-2 text-[10px] text-slate-400 leading-relaxed">
+  Interface local de demonstração (User Story 5) — reusa a mesma lógica de negócio da CLI,
+  sem login, sem persistência além do log de sessão.
+</p>
+</aside>
+
+<main class="pl-64 flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] bg-[#f8fafc]">
+<div class="max-w-3xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-between">
+<div class="flex flex-col gap-5 flex-1 pb-8" id="dialogue-container"></div>
+
+<div id="error-banner" class="hidden mb-3 px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"></div>
+
+<div class="sticky bottom-4 z-20 mt-auto pt-2">
+<div class="hidden mb-2 p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm flex-col gap-1 text-xs font-mono" id="code-tray">
+<div class="flex items-center justify-between text-slate-500 pb-1 border-b border-slate-100">
+<span class="font-medium text-sky-700 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">code</span>
+                Anexar código Python
+              </span>
+<button class="text-slate-400 hover:text-slate-600" id="close-code-tray" type="button">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<textarea id="code-tray-editor" class="w-full mt-1 text-slate-800 font-mono text-xs border-none focus:outline-none focus:ring-0 resize-none" rows="4" placeholder="Cole aqui o código atualizado (será enviado no lugar do texto acima)"></textarea>
+</div>
+<div class="bg-white rounded-2xl border border-slate-200 shadow-md p-2.5 flex flex-col gap-2 transition-all focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100">
+<div class="flex items-start gap-2.5 px-1">
+<span class="text-sky-600 font-mono text-sm font-semibold select-none mt-1">λ</span>
+<textarea class="w-full bg-transparent text-slate-800 placeholder:text-slate-400 text-sm focus:outline-none resize-none leading-relaxed border-none p-0 focus:ring-0" id="chat-input" placeholder="Digite sua resposta, ou use 'Anexar Código' para colar código atualizado..." rows="2"></textarea>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-slate-100 px-1">
+<div class="flex items-center gap-1.5"><button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-medium border border-sky-200 transition-colors" id="attach-code-btn" type="button">
+<span class="material-symbols-outlined text-[15px] text-sky-600">data_object</span>
+<span>Anexar Código</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-medium border border-slate-200/70 transition-colors" id="hint-request-btn" type="button">
+<span class="material-symbols-outlined text-[15px] text-amber-500">tips_and_updates</span>
+<span>Pedir Dica</span>
+</button></div>
+<div class="flex items-center gap-2">
+<span class="hidden sm:inline-block text-[11px] text-slate-400">
+<kbd class="font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">Enter ↵</kbd>
+</span>
+<button class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-medium text-xs shadow-xs transition-all" id="send-btn" type="button">
+<span>Enviar</span>
+<span class="material-symbols-outlined text-[15px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="text-center py-2">
+<p class="text-[11px] text-slate-400">
+              O tutor socrático incentiva a descoberta do raciocínio. Respostas completas não são entregues prontas.
+            </p>
+</div>
+</div>
+</div>
+</main>
+</div>
+<footer class="h-6 bg-white border-t border-slate-200/80 fixed bottom-0 left-0 right-0 z-40 px-4 flex items-center justify-between text-[11px] font-mono text-slate-500"><div class="flex items-center gap-3 text-[11px] text-slate-500">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="text-slate-600 font-medium">Ambiente Socrático Pronto</span>
+</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+<span>Python (local)</span>
+</div></footer>
+
+<!-- Modal de início de sessão (não existia no export do Stitch; necessário porque o
+     mockup partia de uma conversa já em andamento — aqui a sessão precisa ser criada de
+     verdade via POST /session antes de qualquer diálogo).
+
+     Heurísticas de Nielsen aplicadas aqui:
+     - Estética e design minimalista: um único campo (dúvida + enunciado + código), em vez
+       de três campos competindo por atenção.
+     - Reconhecimento em vez de lembrança: placeholder mostra o formato esperado por exemplo.
+     - Visibilidade do status do sistema: feedback em tempo real (abaixo do campo) confirma
+       se um trecho de código foi identificado, antes mesmo de tentar enviar.
+     - Prevenção de erros: botão só habilita quando há conteúdo suficiente; erro de
+       detecção é mostrado antes do envio, não depois de uma falha no servidor.
+     - Controle e liberdade do usuário: o texto nunca é apagado por causa de um erro.
+     - Limite de dicas é secundário (afeta apenas custo/duração, não o valor central da
+       ferramenta) → fica dentro de um <details> recolhido por padrão. -->
+<div id="start-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+<div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-3 border border-slate-200">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 font-mono font-bold flex items-center justify-center border border-sky-100">λ</div>
+<h2 class="font-mono font-bold text-slate-900">Nova sessão — SocraticPy</h2>
+</div>
+<p class="text-xs text-slate-500 -mt-1">Cole sua dúvida, o enunciado do exercício e seu código — nesta ordem ou não, tanto faz.</p>
+<label class="sr-only" for="start-input">Dúvida, enunciado e código</label>
+<textarea id="start-input" rows="9" class="w-full rounded-xl border border-slate-200 p-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-200" placeholder="Ex.:
+
+Estou tentando somar os números de uma lista, mas minha função sempre retorna 0.
+
+def soma(nums):
+    return 0"></textarea>
+<p id="detection-hint" class="text-xs text-slate-400 min-h-[1rem]"></p>
+<details class="text-xs text-slate-500 border-t border-slate-100 pt-2">
+<summary class="cursor-pointer select-none font-medium text-slate-600 hover:text-slate-800">Configurações avançadas</summary>
+<div class="pt-2 flex items-center gap-2">
+<label for="start-hint-limit">Limite de dicas</label>
+<input id="start-hint-limit" type="number" min="1" value="5" class="w-20 rounded-lg border border-slate-200 p-1.5 text-sm"/>
+<span class="text-slate-400">(padrão: 5 — afeta só o custo/duração da sessão)</span>
+</div>
+</details>
+<p id="start-error" class="text-xs text-rose-600 hidden"></p>
+<button id="start-session-btn" class="mt-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 text-white text-sm font-medium transition-colors" type="button">
+        Iniciar sessão
+      </button>
+</div>
+</div>
+
+<script>
+(function () {
+  const STAGE_LABELS = {
+    not_understood: "esclarecendo o enunciado",
+    syntax_error: "erro de sintaxe",
+    logic_error: "erro de lógica",
+    conceptual_block: "bloqueio conceitual",
+  };
+
+  const state = { sessionId: null, hintLimit: 5, lastCode: "" };
+
+  const dialogue = document.getElementById("dialogue-container");
+  const errorBanner = document.getElementById("error-banner");
+  const chatInput = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("send-btn");
+  const attachBtn = document.getElementById("attach-code-btn");
+  const codeTray = document.getElementById("code-tray");
+  const codeTrayEditor = document.getElementById("code-tray-editor");
+  const closeCodeTray = document.getElementById("close-code-tray");
+  const hintBtn = document.getElementById("hint-request-btn");
+  const doneBtn = document.getElementById("done-btn");
+  const resetBtn = document.getElementById("reset-session-btn");
+  const hintsCounter = document.getElementById("hints-counter");
+  const hintsDots = document.querySelectorAll("#hints-dots span");
+  const exerciseLabel = document.getElementById("exercise-label");
+  const sidebarExerciseLabel = document.getElementById("sidebar-exercise-label");
+  const fileLabel = document.getElementById("file-label");
+
+  const startModal = document.getElementById("start-modal");
+  const startBtn = document.getElementById("start-session-btn");
+  const startInput = document.getElementById("start-input");
+  const detectionHint = document.getElementById("detection-hint");
+  const startHintLimit = document.getElementById("start-hint-limit");
+  const startError = document.getElementById("start-error");
+
+  // Detecção de bloco de código Python dentro de um texto livre (dúvida + enunciado +
+  // código colados juntos). Preferência 1: cerca de código ``` ... ``` (mais precisa).
+  // Preferência 2: maior trecho contínuo de linhas com "cara" de Python.
+  const DEFAULT_STATEMENT = "(Sem enunciado separado — considere apenas o código abaixo.)";
+
+  function looksLikePythonLine(rawLine) {
+    const t = rawLine.trim();
+    if (!t) return null; // linha em branco: neutra, não decide sozinha
+    if (/^[ \t]/.test(rawLine)) return true; // indentada
+    if (/^(def|class|import|from|return|for|while|if|elif|else|try|except|finally|with|lambda|yield|raise|assert|pass|break|continue|print)\b/.test(t)) return true;
+    if (/^@\w+/.test(t)) return true; // decorator
+    if (/^#/.test(t)) return true; // comentário
+    if (/:\s*$/.test(t)) return true; // abre bloco
+    if (/=(?!=)/.test(t) && !/[?？]\s*$/.test(t)) return true; // atribuição, não é pergunta
+    if (/\w+\([^)]*\)\s*$/.test(t)) return true; // chamada/definição de função
+    return false;
+  }
+
+  function splitStatementAndCode(text) {
+    const fenceMatch = text.match(/```(?:python)?\n?([\s\S]*?)```/i);
+    if (fenceMatch) {
+      const code = fenceMatch[1].trim();
+      const statement = (
+        text.slice(0, fenceMatch.index) + text.slice(fenceMatch.index + fenceMatch[0].length)
+      ).trim();
+      return { code, statement: statement || DEFAULT_STATEMENT, detected: Boolean(code) };
+    }
+
+    const lines = text.split("\n");
+    const flags = lines.map(looksLikePythonLine);
+    let start = -1, end = -1;
+    for (let i = 0; i < flags.length; i++) {
+      if (flags[i] === true) { if (start === -1) start = i; end = i; }
+    }
+    if (start === -1) {
+      return { code: "", statement: text.trim(), detected: false };
+    }
+    // inclui linhas em branco vizinhas ao trecho de código (não decidem, mas pertencem a ele)
+    while (start > 0 && flags[start - 1] === null) start--;
+    while (end < flags.length - 1 && flags[end + 1] === null) end++;
+
+    const code = lines.slice(start, end + 1).join("\n").trim();
+    const statement = (lines.slice(0, start).join("\n") + "\n" + lines.slice(end + 1).join("\n")).trim();
+    return { code, statement: statement || DEFAULT_STATEMENT, detected: Boolean(code) };
+  }
+
+  function updateDetectionHint() {
+    const raw = startInput.value;
+    if (!raw.trim()) {
+      detectionHint.textContent = "";
+      startBtn.disabled = true;
+      return;
+    }
+    const { code, detected } = splitStatementAndCode(raw);
+    if (detected) {
+      const n = code.split("\n").length;
+      detectionHint.textContent = `✓ Código identificado (${n} linha${n > 1 ? "s" : ""}).`;
+      detectionHint.className = "text-xs text-emerald-600 min-h-[1rem] font-medium";
+      startBtn.disabled = false;
+    } else {
+      detectionHint.textContent = "Ainda não identificamos um trecho de código Python — inclua seu código, mesmo incompleto.";
+      detectionHint.className = "text-xs text-amber-600 min-h-[1rem] font-medium";
+      startBtn.disabled = true;
+    }
+  }
+
+  startInput.addEventListener("input", updateDetectionHint);
+  startBtn.disabled = true;
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function timeStr() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function showError(message) {
+    if (!message) {
+      errorBanner.classList.add("hidden");
+      errorBanner.textContent = "";
+      return;
+    }
+    errorBanner.textContent = message;
+    errorBanner.classList.remove("hidden");
+  }
+
+  function scrollToBottom() {
+    dialogue.scrollTop = dialogue.scrollHeight;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }
+
+  function appendUserMessage(text) {
+    const article = document.createElement("article");
+    article.className = "flex flex-col items-end gap-1.5 ml-auto max-w-[85%]";
+    article.innerHTML = `
+      <div class="flex items-center gap-1.5 text-xs text-slate-400 pr-1">
+        <span class="font-medium text-slate-600">Você</span><span>·</span><span>${timeStr()}</span>
+      </div>
+      <div class="bg-white border border-slate-200/90 text-slate-800 px-4 py-3 rounded-2xl rounded-tr-md shadow-xs w-full">
+        <pre class="text-sm leading-relaxed whitespace-pre-wrap font-sans">${escapeHtml(text)}</pre>
+      </div>`;
+    dialogue.appendChild(article);
+    scrollToBottom();
+  }
+
+  function appendTutorMessage(question, stage) {
+    const label = STAGE_LABELS[stage] || "avaliação";
+    const article = document.createElement("article");
+    article.className = "flex flex-col items-start gap-1.5 mr-auto max-w-[88%]";
+    article.innerHTML = `
+      <div class="flex items-center gap-1.5 text-xs pl-1">
+        <span class="w-2 h-2 rounded-full bg-sky-600"></span>
+        <span class="font-semibold text-sky-800">SocraticPy</span>
+        <span class="text-slate-300">·</span><span class="text-slate-400">${timeStr()}</span>
+        <span class="bg-sky-50 text-sky-700 text-[10px] font-medium px-2 py-0.5 rounded-full border border-sky-200/60">${escapeHtml(label)}</span>
+      </div>
+      <div class="bg-sky-50/40 border border-sky-100 text-slate-800 px-4 py-3.5 rounded-2xl rounded-tl-md shadow-xs w-full">
+        <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(question)}</p>
+      </div>`;
+    dialogue.appendChild(article);
+    scrollToBottom();
+  }
+
+  function appendSystemMessage(text, tone) {
+    const colors = tone === "success"
+      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+      : "bg-amber-50 border-amber-200 text-amber-800";
+    const article = document.createElement("article");
+    article.className = "mx-auto max-w-[90%] w-full";
+    article.innerHTML = `<div class="border ${colors} px-4 py-3 rounded-2xl text-sm text-center font-medium">${escapeHtml(text)}</div>`;
+    dialogue.appendChild(article);
+    scrollToBottom();
+  }
+
+  function updateHints(used, limit) {
+    state.hintLimit = limit;
+    hintsCounter.textContent = `${used}/${limit}`;
+    const dots = document.querySelectorAll("#hints-dots span");
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("bg-sky-400", i < used);
+      dot.classList.toggle("bg-slate-700", i >= used);
+    });
+  }
+
+  function disableInput(disabled) {
+    chatInput.disabled = disabled;
+    sendBtn.disabled = disabled;
+    hintBtn.disabled = disabled;
+    doneBtn.disabled = disabled;
+    attachBtn.disabled = disabled;
+  }
+
+  async function sendRound(studentCode, command) {
+    showError("");
+    const body = { student_code: studentCode || "" };
+    if (command) body.command = command;
+
+    let resp, data;
+    try {
+      resp = await fetch(`/session/${state.sessionId}/round`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      data = await resp.json();
+    } catch (err) {
+      showError("Falha de rede ao falar com o servidor local. Nada foi perdido — tente enviar de novo.");
+      return false;
+    }
+
+    if (!resp.ok) {
+      showError(data.error || "Erro na rodada. Nada foi perdido — corrija e tente de novo.");
+      return false;
+    }
+
+    if (typeof data.hints_used === "number" && typeof data.hint_limit === "number") {
+      updateHints(data.hints_used, data.hint_limit);
+    }
+
+    if (data.question_shown) {
+      appendTutorMessage(data.question_shown, data.stage);
+    }
+
+    if (data.status === "success") {
+      appendSystemMessage("Sessão concluída com sucesso!", "success");
+      disableInput(true);
+    } else if (data.status === "limit_reached") {
+      appendSystemMessage(`Limite de ${state.hintLimit} dicas atingido. Sessão encerrada.`, "limit");
+      disableInput(true);
+    }
+
+    if (studentCode) state.lastCode = studentCode;
+    return true;
+  }
+
+  function currentInputCode() {
+    if (codeTray && !codeTray.classList.contains("hidden") && codeTrayEditor.value.trim()) {
+      return codeTrayEditor.value;
+    }
+    return chatInput.value;
+  }
+
+  sendBtn.addEventListener("click", async () => {
+    const code = currentInputCode();
+    if (!code.trim() || !state.sessionId) return;
+
+    const originalLabel = sendBtn.innerHTML;
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Enviando…"; // visibilidade do status do sistema
+
+    appendUserMessage(code);
+    const ok = await sendRound(code);
+
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = originalLabel;
+
+    // Só limpa a entrada depois de confirmar sucesso — em caso de erro, o texto do
+    // aluno permanece disponível para reenvio (controle e liberdade do usuário).
+    if (ok) {
+      chatInput.value = "";
+      codeTrayEditor.value = "";
+      codeTray.classList.add("hidden");
+      codeTray.classList.remove("flex");
+    }
+  });
+
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  attachBtn.addEventListener("click", () => {
+    codeTray.classList.toggle("hidden");
+    codeTray.classList.toggle("flex");
+  });
+
+  closeCodeTray.addEventListener("click", () => {
+    codeTray.classList.add("hidden");
+    codeTray.classList.remove("flex");
+  });
+
+  hintBtn.addEventListener("click", () => {
+    if (!state.sessionId || !state.lastCode) return;
+    appendUserMessage("(pedindo mais uma dica sobre o mesmo código)");
+    sendRound(state.lastCode);
+  });
+
+  doneBtn.addEventListener("click", () => {
+    if (!state.sessionId) return;
+    sendRound("", "done");
+  });
+
+  resetBtn.addEventListener("click", () => {
+    if (confirm("Deseja reiniciar e começar uma nova sessão?")) location.reload();
+  });
+
+  startBtn.addEventListener("click", async () => {
+    startError.classList.add("hidden");
+    const raw = startInput.value.trim();
+    const { statement, code, detected } = splitStatementAndCode(raw);
+    const hintLimit = parseInt(startHintLimit.value, 10) || 5;
+
+    if (!raw || !detected) {
+      // Erro detectado ANTES de qualquer chamada de rede (prevenção de erros) — o texto
+      // do usuário permanece intacto no campo, nada é apagado.
+      startError.textContent = "Inclua um trecho de código Python — não conseguimos identificar um.";
+      startError.classList.remove("hidden");
+      return;
+    }
+
+    const originalLabel = startBtn.textContent;
+    startBtn.disabled = true;
+    startBtn.textContent = "Iniciando…"; // visibilidade do status do sistema
+
+    let resp, data;
+    try {
+      resp = await fetch("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statement, code, hint_limit: hintLimit }),
+      });
+      data = await resp.json();
+    } catch (err) {
+      startError.textContent = "Falha de rede ao criar a sessão. Seu texto não foi perdido — tente novamente.";
+      startError.classList.remove("hidden");
+      startBtn.disabled = false;
+      startBtn.textContent = originalLabel;
+      return;
+    }
+
+    if (!resp.ok) {
+      startError.textContent = data.error || "Erro ao iniciar a sessão. Seu texto não foi perdido — corrija e tente de novo.";
+      startError.classList.remove("hidden");
+      startBtn.disabled = false;
+      startBtn.textContent = originalLabel;
+      return;
+    }
+
+    state.sessionId = data.session_id;
+    state.lastCode = code;
+    updateHints(data.hints_used || 0, data.hint_limit || hintLimit);
+
+    const shortLabel = statement.length > 32 ? statement.slice(0, 32) + "…" : statement;
+    exerciseLabel.textContent = shortLabel;
+    sidebarExerciseLabel.textContent = shortLabel;
+    fileLabel.textContent = "sessao.py";
+
+    startModal.classList.add("hidden");
+
+    appendUserMessage(raw);
+
+    if (data.status === "success") {
+      appendSystemMessage(data.message || "Os testes já passam! Sessão concluída com sucesso.", "success");
+      disableInput(true);
+    } else {
+      sendRound(code);
+    }
+  });
+})();
+</script>
+</body></html>

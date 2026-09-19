@@ -1,0 +1,14 @@
+# Segredos — nunca versionar
+.env
+
+# Ambiente virtual / Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Dados gerados em runtime (não é código, é dado de sessão/pesquisa)
+logs/*.jsonl
+
+# macOS
+.DS_Store
