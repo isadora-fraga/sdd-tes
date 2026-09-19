@@ -52,8 +52,14 @@ def cmd_start(args: argparse.Namespace, client: Optional[object] = None, input_f
         try:
             round_ = session_service.process_round(session, current_code, client)
         except GeminiCommunicationError as exc:
-            # FR-012: falha de comunicação não trava a sessão nem consome dica.
-            print(f"Erro ao comunicar com a IA: {exc}. Tente novamente.")
+            # FR-012: falha de comunicação não trava a sessão nem consome dica. Exige
+            # confirmação explícita antes de tentar de novo, para não martelar a API em
+            # loop apertado durante uma indisponibilidade temporária (ex.: erro 503).
+            print(f"Erro ao comunicar com a IA: {exc}")
+            choice = input_fn("Tentar novamente? (Enter para tentar, /quit para sair): ").strip()
+            if choice == "/quit":
+                print("Sessão encerrada manualmente.")
+                return 1
             continue
         except InvalidCodeError as exc:
             print(f"Erro: {exc}")

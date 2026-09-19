@@ -53,9 +53,9 @@ Todos os FR-001 a FR-016 têm teste automatizado correspondente passando
 | FR-001, FR-016 | `tests/unit/test_validators.py`, `tests/integration/test_single_round_flow.py` |
 | FR-002 | `tests/unit/test_test_runner.py` |
 | FR-003 | `tests/integration/test_multi_round_progression.py` |
-| FR-004, FR-012 | `tests/contract/test_gemini_contract.py` |
+| FR-004, FR-012 | `tests/contract/test_gemini_contract.py`, `tests/unit/test_cli_main.py` (falha de comunicação exige confirmação antes de nova tentativa — corrigido após reproduzir um 503 real da API) |
 | FR-005, FR-006 | `tests/unit/test_guard.py`, `tests/integration/test_single_round_flow.py` |
-| FR-007 | `src/cli/main.py` (`cmd_start`, loop manual — smoke-testado, ver relatório de implementação) |
+| FR-007 | `src/cli/main.py` (`cmd_start`, loop manual — smoke-testado + `tests/unit/test_cli_main.py`) |
 | FR-008, FR-009 | `tests/integration/test_hint_limit.py` |
 | FR-010 | `tests/integration/test_single_round_flow.py` (Scenario 3) |
 | FR-011 | `tests/contract/test_log_schema.py`, `tests/integration/test_log_reprocessing.py` |

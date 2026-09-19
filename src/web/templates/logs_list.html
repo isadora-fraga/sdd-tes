@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SocraticPy — Logs de sessão</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['Geist', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } } };
+</script>
+</head>
+<body class="bg-[#f8fafc] font-sans text-slate-800 antialiased min-h-screen">
+<header class="h-14 bg-slate-900 px-5 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-300 font-mono font-bold text-sm flex items-center justify-center">λ</div>
+<span class="font-mono font-bold text-white">SocraticPy</span>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800">Logs de sessão</span>
+<a class="ml-auto text-xs text-slate-300 hover:text-white inline-flex items-center gap-1" href="/">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+<span>Voltar ao tutor</span>
+</a>
+</header>
+
+<main class="max-w-3xl mx-auto px-6 py-8">
+<h1 class="text-lg font-semibold text-slate-900 mb-1">Sessões registradas</h1>
+<p class="text-xs text-slate-500 mb-6">
+  Cada linha é um arquivo <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">logs/&lt;session_id&gt;.jsonl</code>
+  — dado de pesquisa (constitution, Princípio IV), uma linha por rodada concluída.
+</p>
+
+{% if entries %}
+<div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+  {% for e in entries %}
+  <a class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition-colors" href="/logs/{{ e.session_id }}">
+    <div class="flex flex-col min-w-0">
+      <span class="font-mono text-xs text-slate-700 truncate">{{ e.session_id }}</span>
+      <span class="text-[11px] text-slate-400">{{ e.modified }}</span>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      <span class="text-xs text-slate-500">{{ e.round_count }} rodada{{ 's' if e.round_count != 1 else '' }}</span>
+      <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border
+        {% if e.status == 'success' %}bg-emerald-50 text-emerald-700 border-emerald-200
+        {% elif e.status == 'limit_reached' %}bg-amber-50 text-amber-700 border-amber-200
+        {% else %}bg-slate-50 text-slate-600 border-slate-200{% endif %}">{{ e.status }}</span>
+      <span class="material-symbols-outlined text-slate-300 text-[18px]">chevron_right</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-slate-200 border-dashed px-4 py-8 text-center text-sm text-slate-400">
+  Nenhuma sessão registrada ainda — rode uma sessão pelo tutor para gerar o primeiro log.
+</div>
+{% endif %}
+</main>
+</body></html>

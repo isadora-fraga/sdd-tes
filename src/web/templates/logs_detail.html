@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SocraticPy — Sessão {{ session_id }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['Geist', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } } };
+</script>
+</head>
+<body class="bg-[#f8fafc] font-sans text-slate-800 antialiased min-h-screen">
+<header class="h-14 bg-slate-900 px-5 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 text-sky-300 font-mono font-bold text-sm flex items-center justify-center">λ</div>
+<span class="font-mono font-bold text-white">SocraticPy</span>
+<a class="ml-auto text-xs text-slate-300 hover:text-white inline-flex items-center gap-1" href="/logs">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+<span>Todas as sessões</span>
+</a>
+</header>
+
+<main class="max-w-3xl mx-auto px-6 py-8">
+<h1 class="text-lg font-semibold text-slate-900 mb-1 font-mono">{{ session_id }}</h1>
+<p class="text-xs text-slate-500 mb-6">{{ rounds|length }} rodada{{ 's' if rounds|length != 1 else '' }} registrada{{ 's' if rounds|length != 1 else '' }}.</p>
+
+<div class="flex flex-col gap-4">
+  {% for r in rounds %}
+  <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="font-mono font-semibold text-slate-700">Rodada {{ r.round_number }}</span>
+        <span class="text-slate-300">·</span>
+        <span class="text-slate-400">{{ r.timestamp }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        {% if r.stage %}<span class="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-medium">{{ r.stage }}</span>{% endif %}
+        {% if r.guard_rejected %}<span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-medium">guarda bloqueou</span>{% endif %}
+        {% if r.used_fallback %}<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium">fallback</span>{% endif %}
+      </div>
+    </div>
+    <div class="px-4 py-3 flex flex-col gap-3 text-sm">
+      {% if r.test_result %}
+      <div>
+        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Testes</span>
+        <p class="text-xs {{ 'text-emerald-600' if r.test_result.passed else 'text-rose-600' }}">
+          {{ "passou" if r.test_result.passed else "falhou: " + (r.test_result.failed_tests|join(", ")) }}
+        </p>
+      </div>
+      {% endif %}
+      <div>
+        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Pergunta exibida</span>
+        <p class="text-slate-800">{{ r.question_shown }}</p>
+      </div>
+      <details class="text-xs text-slate-400">
+        <summary class="cursor-pointer select-none hover:text-slate-600">Ver prompt enviado (inclui o código do aluno) e resposta bruta do modelo</summary>
+        <div class="mt-2 flex flex-col gap-2">
+          <pre class="bg-slate-50 border border-slate-100 rounded-lg p-2 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap">{{ r.prompt_sent }}</pre>
+          <pre class="bg-slate-50 border border-slate-100 rounded-lg p-2 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap">{{ r.model_response_raw }}</pre>
+        </div>
+      </details>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</main>
+</body></html>

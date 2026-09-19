@@ -71,6 +71,10 @@
 <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
 </div>
 </div>
+<a class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 transition-colors" href="/logs" target="_blank" title="Ver logs de sessão (nova aba)">
+<span class="material-symbols-outlined text-[15px]">history_edu</span>
+<span class="hidden md:inline">Logs</span>
+</a>
 <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-700/80 transition-colors" id="reset-session-btn" title="Reiniciar sessão">
 <span class="material-symbols-outlined text-[15px]">refresh</span>
 <span class="hidden md:inline">Reiniciar</span>
@@ -121,6 +125,7 @@
 </div>
 <div class="px-2 flex flex-col gap-1 text-[11px] font-mono text-slate-500">
 <span><span class="text-sky-700">/done</span> — confirma sucesso sem testes</span>
+<span><span class="text-sky-700">/quit</span> — encerra a sessão manualmente</span>
 <span>Botão <span class="text-sky-700">Reiniciar</span> — nova sessão</span>
 </div>
 </div>
@@ -135,7 +140,13 @@
 <div class="max-w-3xl w-full mx-auto px-6 py-6 flex-1 flex flex-col justify-between">
 <div class="flex flex-col gap-5 flex-1 pb-8" id="dialogue-container"></div>
 
-<div id="error-banner" class="hidden mb-3 px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"></div>
+<div id="error-banner" class="hidden mb-3 px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between gap-3">
+<span id="error-text" class="flex-1"></span>
+<button id="error-retry-btn" type="button" class="hidden shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold transition-colors">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Tentar novamente</span>
+</button>
+</div>
 
 <div class="sticky bottom-4 z-20 mt-auto pt-2">
 <div class="hidden mb-2 p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm flex-col gap-1 text-xs font-mono" id="code-tray">
@@ -153,7 +164,7 @@
 <div class="bg-white rounded-2xl border border-slate-200 shadow-md p-2.5 flex flex-col gap-2 transition-all focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100">
 <div class="flex items-start gap-2.5 px-1">
 <span class="text-sky-600 font-mono text-sm font-semibold select-none mt-1">λ</span>
-<textarea class="w-full bg-transparent text-slate-800 placeholder:text-slate-400 text-sm focus:outline-none resize-none leading-relaxed border-none p-0 focus:ring-0" id="chat-input" placeholder="Digite sua resposta, ou use 'Anexar Código' para colar código atualizado..." rows="2"></textarea>
+<textarea class="w-full bg-transparent text-slate-800 placeholder:text-slate-400 text-sm focus:outline-none resize-none leading-relaxed border-none p-0 focus:ring-0 max-h-60 overflow-y-auto" id="chat-input" placeholder="Digite sua resposta, ou cole o código atualizado direto aqui..." rows="2"></textarea>
 </div>
 <div class="flex items-center justify-between pt-1 border-t border-slate-100 px-1">
 <div class="flex items-center gap-1.5"><button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-medium border border-sky-200 transition-colors" id="attach-code-btn" type="button">
@@ -224,12 +235,25 @@ Estou tentando somar os números de uma lista, mas minha função sempre retorna
 def soma(nums):
     return 0"></textarea>
 <p id="detection-hint" class="text-xs text-slate-400 min-h-[1rem]"></p>
+<div id="start-preview" class="hidden bg-slate-900 rounded-xl overflow-hidden border border-slate-800 text-slate-100 shadow-xs">
+<div class="flex items-center justify-between px-3 py-1.5 bg-slate-950/70 border-b border-slate-800/80 text-[11px] font-mono text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-slate-700"></span>
+<span class="text-slate-300">Python (detectado)</span>
+</div>
+<button class="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors" id="start-preview-copy-btn" type="button">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+<span>Copiar</span>
+</button>
+</div>
+<pre class="p-3 font-mono text-[12px] leading-relaxed overflow-x-auto overflow-y-auto max-h-40 text-slate-200 whitespace-pre-wrap" id="start-preview-code"></pre>
+</div>
 <details class="text-xs text-slate-500 border-t border-slate-100 pt-2">
 <summary class="cursor-pointer select-none font-medium text-slate-600 hover:text-slate-800">Configurações avançadas</summary>
 <div class="pt-2 flex items-center gap-2">
 <label for="start-hint-limit">Limite de dicas</label>
-<input id="start-hint-limit" type="number" min="1" value="5" class="w-20 rounded-lg border border-slate-200 p-1.5 text-sm"/>
-<span class="text-slate-400">(padrão: 5 — afeta só o custo/duração da sessão)</span>
+<input id="start-hint-limit" type="number" min="1" max="15" value="5" class="w-20 rounded-lg border border-slate-200 p-1.5 text-sm"/>
+<span class="text-slate-400">(1 a 15, padrão 5 — afeta só o custo/duração da sessão)</span>
 </div>
 </details>
 <p id="start-error" class="text-xs text-rose-600 hidden"></p>
@@ -252,6 +276,8 @@ def soma(nums):
 
   const dialogue = document.getElementById("dialogue-container");
   const errorBanner = document.getElementById("error-banner");
+  const errorText = document.getElementById("error-text");
+  const errorRetryBtn = document.getElementById("error-retry-btn");
   const chatInput = document.getElementById("chat-input");
   const sendBtn = document.getElementById("send-btn");
   const attachBtn = document.getElementById("attach-code-btn");
@@ -271,6 +297,9 @@ def soma(nums):
   const startBtn = document.getElementById("start-session-btn");
   const startInput = document.getElementById("start-input");
   const detectionHint = document.getElementById("detection-hint");
+  const startPreview = document.getElementById("start-preview");
+  const startPreviewCode = document.getElementById("start-preview-code");
+  const startPreviewCopyBtn = document.getElementById("start-preview-copy-btn");
   const startHintLimit = document.getElementById("start-hint-limit");
   const startError = document.getElementById("start-error");
 
@@ -292,14 +321,17 @@ def soma(nums):
     return false;
   }
 
-  function splitStatementAndCode(text) {
+  // Extração pura: separa um texto livre em "prosa" (dúvida/enunciado) e "código"
+  // (se houver). Reaproveitada tanto pela modal de início (detecção + validação)
+  // quanto na renderização das mensagens do chat (bloco de código visual + copiar).
+  function findCodeSpan(text) {
     const fenceMatch = text.match(/```(?:python)?\n?([\s\S]*?)```/i);
     if (fenceMatch) {
       const code = fenceMatch[1].trim();
-      const statement = (
+      const prose = (
         text.slice(0, fenceMatch.index) + text.slice(fenceMatch.index + fenceMatch[0].length)
       ).trim();
-      return { code, statement: statement || DEFAULT_STATEMENT, detected: Boolean(code) };
+      return { prose, code };
     }
 
     const lines = text.split("\n");
@@ -309,33 +341,42 @@ def soma(nums):
       if (flags[i] === true) { if (start === -1) start = i; end = i; }
     }
     if (start === -1) {
-      return { code: "", statement: text.trim(), detected: false };
+      return { prose: text.trim(), code: "" };
     }
     // inclui linhas em branco vizinhas ao trecho de código (não decidem, mas pertencem a ele)
     while (start > 0 && flags[start - 1] === null) start--;
     while (end < flags.length - 1 && flags[end + 1] === null) end++;
 
     const code = lines.slice(start, end + 1).join("\n").trim();
-    const statement = (lines.slice(0, start).join("\n") + "\n" + lines.slice(end + 1).join("\n")).trim();
-    return { code, statement: statement || DEFAULT_STATEMENT, detected: Boolean(code) };
+    const prose = (lines.slice(0, start).join("\n") + "\n" + lines.slice(end + 1).join("\n")).trim();
+    return { prose, code };
+  }
+
+  function splitStatementAndCode(text) {
+    const { prose, code } = findCodeSpan(text);
+    return { code, statement: prose || DEFAULT_STATEMENT, detected: Boolean(code) };
   }
 
   function updateDetectionHint() {
     const raw = startInput.value;
     if (!raw.trim()) {
       detectionHint.textContent = "";
+      startPreview.classList.add("hidden");
       startBtn.disabled = true;
       return;
     }
     const { code, detected } = splitStatementAndCode(raw);
     if (detected) {
       const n = code.split("\n").length;
-      detectionHint.textContent = `✓ Código identificado (${n} linha${n > 1 ? "s" : ""}).`;
+      detectionHint.textContent = `✓ Código identificado (${n} linha${n > 1 ? "s" : ""}) — confira abaixo:`;
       detectionHint.className = "text-xs text-emerald-600 min-h-[1rem] font-medium";
+      startPreviewCode.textContent = code; // preview ao vivo do que será enviado como código
+      startPreview.classList.remove("hidden");
       startBtn.disabled = false;
     } else {
       detectionHint.textContent = "Ainda não identificamos um trecho de código Python — inclua seu código, mesmo incompleto.";
       detectionHint.className = "text-xs text-amber-600 min-h-[1rem] font-medium";
+      startPreview.classList.add("hidden");
       startBtn.disabled = true;
     }
   }
@@ -343,22 +384,115 @@ def soma(nums):
   startInput.addEventListener("input", updateDetectionHint);
   startBtn.disabled = true;
 
+  startPreviewCopyBtn.addEventListener("click", async () => {
+    const original = startPreviewCopyBtn.innerHTML;
+    try {
+      await navigator.clipboard.writeText(startPreviewCode.textContent);
+      startPreviewCopyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check</span><span>Copiado!</span>';
+    } catch (err) {
+      startPreviewCopyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">error</span><span>Erro ao copiar</span>';
+    }
+    setTimeout(() => { startPreviewCopyBtn.innerHTML = original; }, 1500);
+  });
+
   function escapeHtml(str) {
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Trechos entre crases simples (`assim`) viram <code> inline — mesma convenção do
+  // export do Stitch para referências curtas dentro de uma frase.
+  function renderInlineCode(escapedText) {
+    return escapedText.replace(
+      /`([^`\n]+)`/g,
+      '<code class="font-mono text-xs bg-slate-100 text-slate-800 px-1 py-0.5 rounded">$1</code>'
+    );
   }
 
   function timeStr() {
     return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
-  function showError(message) {
+  // Bloco de código visual (estilo do export do Stitch) com botão de copiar. O código
+  // real fica guardado em `codeBlockStore` (por id) em vez de embutido num atributo
+  // HTML, para não precisar escapar aspas/quebras de linha dentro do atributo.
+  let codeBlockCounter = 0;
+  const codeBlockStore = new Map();
+
+  function codeBlockHtml(code) {
+    const id = `code-${++codeBlockCounter}`;
+    codeBlockStore.set(id, code);
+    return `
+      <div class="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 text-slate-100 shadow-xs mt-1 w-full">
+        <div class="flex items-center justify-between px-3 py-1.5 bg-slate-950/70 border-b border-slate-800/80 text-[11px] font-mono text-slate-400">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-slate-700"></span>
+            <span class="text-slate-300">Python</span>
+          </div>
+          <button type="button" class="copy-code-btn inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors" data-copy-id="${id}">
+            <span class="material-symbols-outlined text-[13px]">content_copy</span>
+            <span>Copiar</span>
+          </button>
+        </div>
+        <pre class="p-3 font-mono text-[12px] leading-relaxed overflow-x-auto text-slate-200 whitespace-pre-wrap">${escapeHtml(code)}</pre>
+      </div>`;
+  }
+
+  function wireCopyButtons(container) {
+    container.querySelectorAll(".copy-code-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const code = codeBlockStore.get(btn.getAttribute("data-copy-id")) || "";
+        const original = btn.innerHTML;
+        try {
+          await navigator.clipboard.writeText(code);
+          btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check</span><span>Copiado!</span>';
+        } catch (err) {
+          btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">error</span><span>Erro ao copiar</span>';
+        }
+        setTimeout(() => { btn.innerHTML = original; }, 1500);
+      });
+    });
+  }
+
+  // Monta o corpo de uma mensagem: parágrafo de prosa (com <code> inline) + bloco de
+  // código visual com botão de copiar, quando um trecho de código é identificado.
+  function renderMessageBody(text) {
+    const { prose, code } = findCodeSpan(text);
+    let html = "";
+    if (prose) {
+      html += `<p class="text-sm leading-relaxed whitespace-pre-wrap">${renderInlineCode(escapeHtml(prose))}</p>`;
+    }
+    if (code) {
+      html += codeBlockHtml(code);
+    }
+    if (!prose && !code) {
+      html = `<p class="text-sm leading-relaxed whitespace-pre-wrap">${renderInlineCode(escapeHtml(text))}</p>`;
+    }
+    return html;
+  }
+
+  function showError(message, onRetry) {
     if (!message) {
       errorBanner.classList.add("hidden");
-      errorBanner.textContent = "";
+      errorText.textContent = "";
+      errorRetryBtn.classList.add("hidden");
+      errorRetryBtn.onclick = null;
       return;
     }
-    errorBanner.textContent = message;
+    errorText.textContent = message;
     errorBanner.classList.remove("hidden");
+    if (onRetry) {
+      errorRetryBtn.classList.remove("hidden");
+      errorRetryBtn.disabled = false;
+      errorRetryBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">refresh</span><span>Tentar novamente</span>';
+      errorRetryBtn.onclick = async () => {
+        errorRetryBtn.disabled = true;
+        errorRetryBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span><span>Tentando…</span>';
+        await onRetry();
+      };
+    } else {
+      errorRetryBtn.classList.add("hidden");
+      errorRetryBtn.onclick = null;
+    }
   }
 
   function scrollToBottom() {
@@ -373,10 +507,11 @@ def soma(nums):
       <div class="flex items-center gap-1.5 text-xs text-slate-400 pr-1">
         <span class="font-medium text-slate-600">Você</span><span>·</span><span>${timeStr()}</span>
       </div>
-      <div class="bg-white border border-slate-200/90 text-slate-800 px-4 py-3 rounded-2xl rounded-tr-md shadow-xs w-full">
-        <pre class="text-sm leading-relaxed whitespace-pre-wrap font-sans">${escapeHtml(text)}</pre>
+      <div class="bg-white border border-slate-200/90 text-slate-800 px-4 py-3 rounded-2xl rounded-tr-md shadow-xs flex flex-col gap-2.5 w-full">
+        ${renderMessageBody(text)}
       </div>`;
     dialogue.appendChild(article);
+    wireCopyButtons(article);
     scrollToBottom();
   }
 
@@ -391,10 +526,11 @@ def soma(nums):
         <span class="text-slate-300">·</span><span class="text-slate-400">${timeStr()}</span>
         <span class="bg-sky-50 text-sky-700 text-[10px] font-medium px-2 py-0.5 rounded-full border border-sky-200/60">${escapeHtml(label)}</span>
       </div>
-      <div class="bg-sky-50/40 border border-sky-100 text-slate-800 px-4 py-3.5 rounded-2xl rounded-tl-md shadow-xs w-full">
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(question)}</p>
+      <div class="bg-sky-50/40 border border-sky-100 text-slate-800 px-4 py-3.5 rounded-2xl rounded-tl-md shadow-xs flex flex-col gap-2.5 w-full">
+        ${renderMessageBody(question)}
       </div>`;
     dialogue.appendChild(article);
+    wireCopyButtons(article);
     scrollToBottom();
   }
 
@@ -427,8 +563,41 @@ def soma(nums):
     attachBtn.disabled = disabled;
   }
 
-  async function sendRound(studentCode, command) {
-    showError("");
+  // Indicador de "pensando..." — a chamada à API do Gemini pode levar alguns segundos;
+  // sem isso, a espera parece que a aplicação travou (visibilidade do status do sistema).
+  let typingIndicatorEl = null;
+
+  function showTypingIndicator() {
+    if (typingIndicatorEl) return;
+    typingIndicatorEl = document.createElement("article");
+    typingIndicatorEl.className = "flex flex-col items-start gap-1.5 mr-auto max-w-[70%]";
+    typingIndicatorEl.innerHTML = `
+      <div class="flex items-center gap-1.5 text-xs pl-1">
+        <span class="w-2 h-2 rounded-full bg-sky-600"></span>
+        <span class="font-semibold text-sky-800">SocraticPy</span>
+      </div>
+      <div class="bg-sky-50/40 border border-sky-100 text-slate-500 px-4 py-3 rounded-2xl rounded-tl-md shadow-xs flex items-center gap-2 w-full">
+        <span class="flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-bounce" style="animation-delay:0ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-bounce" style="animation-delay:150ms"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-bounce" style="animation-delay:300ms"></span>
+        </span>
+        <span class="text-xs text-slate-400">pensando… (pode levar alguns segundos)</span>
+      </div>`;
+    dialogue.appendChild(typingIndicatorEl);
+    scrollToBottom();
+  }
+
+  function hideTypingIndicator() {
+    if (typingIndicatorEl) {
+      typingIndicatorEl.remove();
+      typingIndicatorEl = null;
+    }
+  }
+
+  // Chamada de rede pura — não mexe no DOM, só devolve o resultado. Separado de
+  // `submitRound` para que o retry possa refazer exatamente a mesma chamada.
+  async function postRound(studentCode, command) {
     const body = { student_code: studentCode || "" };
     if (command) body.command = command;
 
@@ -441,15 +610,16 @@ def soma(nums):
       });
       data = await resp.json();
     } catch (err) {
-      showError("Falha de rede ao falar com o servidor local. Nada foi perdido — tente enviar de novo.");
-      return false;
+      return { ok: false, message: "Falha de rede ao falar com o servidor local. Nada foi perdido — tente de novo." };
     }
 
     if (!resp.ok) {
-      showError(data.error || "Erro na rodada. Nada foi perdido — corrija e tente de novo.");
-      return false;
+      return { ok: false, message: data.error || "Erro na rodada. Nada foi perdido — corrija e tente de novo." };
     }
+    return { ok: true, data };
+  }
 
+  function applyRoundResult(data, studentCode) {
     if (typeof data.hints_used === "number" && typeof data.hint_limit === "number") {
       updateHints(data.hints_used, data.hint_limit);
     }
@@ -467,6 +637,30 @@ def soma(nums):
     }
 
     if (studentCode) state.lastCode = studentCode;
+  }
+
+  // Ponto único de envio de rodada, usado por Enviar/Pedir Dica/`/done` e pelo botão
+  // "Tentar novamente" do banner de erro (que reexecuta esta mesma chamada). Centraliza
+  // também o estado de espera (controles desabilitados + indicador de "pensando...").
+  async function submitRound(studentCode, command) {
+    showError("");
+    disableInput(true);
+    showTypingIndicator();
+
+    const result = await postRound(studentCode, command);
+
+    hideTypingIndicator();
+
+    if (!result.ok) {
+      disableInput(false);
+      showError(result.message, () => submitRound(studentCode, command));
+      return false;
+    }
+
+    applyRoundResult(result.data, studentCode); // pode desabilitar de novo se status for terminal
+    if (result.data.status === "active") {
+      disableInput(false);
+    }
     return true;
   }
 
@@ -477,28 +671,43 @@ def soma(nums):
     return chatInput.value;
   }
 
+  function clearChatInput() {
+    chatInput.value = "";
+    autoResizeChatInput(); // volta ao tamanho pequeno depois de limpar
+    codeTrayEditor.value = "";
+    codeTray.classList.add("hidden");
+    codeTray.classList.remove("flex");
+  }
+
   sendBtn.addEventListener("click", async () => {
-    const code = currentInputCode();
-    if (!code.trim() || !state.sessionId) return;
+    const raw = currentInputCode();
+    if (!raw.trim() || !state.sessionId) return;
+    const normalized = raw.trim().toLowerCase();
 
-    const originalLabel = sendBtn.innerHTML;
-    sendBtn.disabled = true;
-    sendBtn.textContent = "Enviando…"; // visibilidade do status do sistema
+    // /done e /quit são comandos, não código/texto de rodada — mesmo comportamento da
+    // CLI (contracts/cli-contract.md), reconhecidos aqui também quando digitados no chat
+    // (antes só funcionavam pelo botão /done do cabeçalho).
+    if (normalized === "/quit") {
+      appendUserMessage(raw);
+      clearChatInput();
+      appendSystemMessage("Sessão encerrada manualmente.", "limit");
+      disableInput(true);
+      return;
+    }
 
-    appendUserMessage(code);
-    const ok = await sendRound(code);
+    if (normalized === "/done") {
+      appendUserMessage(raw);
+      clearChatInput();
+      await submitRound("", "done");
+      return;
+    }
 
-    sendBtn.disabled = false;
-    sendBtn.innerHTML = originalLabel;
+    appendUserMessage(raw);
+    const ok = await submitRound(raw);
 
     // Só limpa a entrada depois de confirmar sucesso — em caso de erro, o texto do
     // aluno permanece disponível para reenvio (controle e liberdade do usuário).
-    if (ok) {
-      chatInput.value = "";
-      codeTrayEditor.value = "";
-      codeTray.classList.add("hidden");
-      codeTray.classList.remove("flex");
-    }
+    if (ok) clearChatInput();
   });
 
   chatInput.addEventListener("keydown", (e) => {
@@ -507,6 +716,17 @@ def soma(nums):
       sendBtn.click();
     }
   });
+
+  // Auto-expande o campo de chat ao colar/digitar código (até um limite, depois rola) —
+  // rows="2" fixo deixava blocos de código praticamente ilegíveis ao colar.
+  const CHAT_INPUT_MAX_HEIGHT = 240; // px, bate com a classe max-h-60
+
+  function autoResizeChatInput() {
+    chatInput.style.height = "auto";
+    chatInput.style.height = Math.min(chatInput.scrollHeight, CHAT_INPUT_MAX_HEIGHT) + "px";
+  }
+
+  chatInput.addEventListener("input", autoResizeChatInput);
 
   attachBtn.addEventListener("click", () => {
     codeTray.classList.toggle("hidden");
@@ -521,12 +741,12 @@ def soma(nums):
   hintBtn.addEventListener("click", () => {
     if (!state.sessionId || !state.lastCode) return;
     appendUserMessage("(pedindo mais uma dica sobre o mesmo código)");
-    sendRound(state.lastCode);
+    submitRound(state.lastCode);
   });
 
   doneBtn.addEventListener("click", () => {
     if (!state.sessionId) return;
-    sendRound("", "done");
+    submitRound("", "done");
   });
 
   resetBtn.addEventListener("click", () => {
@@ -537,7 +757,12 @@ def soma(nums):
     startError.classList.add("hidden");
     const raw = startInput.value.trim();
     const { statement, code, detected } = splitStatementAndCode(raw);
-    const hintLimit = parseInt(startHintLimit.value, 10) || 5;
+    // Nunca confie só no atributo max="" do <input> — ele não impede digitar/colar um
+    // valor fora do intervalo; o limite real é reforçado aqui e de novo no servidor.
+    let hintLimit = parseInt(startHintLimit.value, 10);
+    if (!Number.isFinite(hintLimit) || hintLimit < 1) hintLimit = 5;
+    hintLimit = Math.min(hintLimit, 15);
+    startHintLimit.value = hintLimit;
 
     if (!raw || !detected) {
       // Erro detectado ANTES de qualquer chamada de rede (prevenção de erros) — o texto
@@ -592,7 +817,7 @@ def soma(nums):
       appendSystemMessage(data.message || "Os testes já passam! Sessão concluída com sucesso.", "success");
       disableInput(true);
     } else {
-      sendRound(code);
+      submitRound(code);
     }
   });
 })();

@@ -6,6 +6,7 @@ Princípio II), saída estruturada em JSON (pergunta + estágio numa única cham
 from __future__ import annotations
 
 import json
+import time
 from typing import Any, Dict, List, Optional
 
 from src.config import get_gemini_api_key
@@ -13,7 +14,20 @@ from src.models.session import ExecutionResult, Stage
 
 VALID_STAGES = {stage.value for stage in Stage}
 
-DEFAULT_MODEL = "gemini-flash-latest"
+# "flash-lite" é o nível mais barato/leve adequado à tarefa (gerar 1 pergunta + 1 rótulo
+# de estágio); pinado numa versão estável, em vez de um alias "-latest" que pode apontar
+# para uma variante mais pesada/concorrida (ex.: com "thinking" ligado por padrão) — mais
+# barato (Princípio II) e, na prática, menos sujeito a 503 de sobrecarga.
+# Nota: "gemini-2.5-flash-lite" parou de aceitar novas integrações (erro 404 real da API
+# recomendando a troca) — atualizado para a geração seguinte.
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+
+# Erros 5xx (ServerError) do lado do Google costumam ser transitórios (ex.: 503
+# UNAVAILABLE por alta demanda) — vale uma pequena tentativa automática antes de repassar
+# o erro ao aluno. Erros 4xx (ClientError — ex.: chave inválida) NUNCA são retentados
+# automaticamente, pois não são transitórios.
+MAX_SERVER_ERROR_RETRIES = 2
+RETRY_BACKOFF_SECONDS = 1.5
 
 # Limite de caracteres do código enviado ao modelo — cost-conscious (Princípio II) e
 # trata o Edge Case de código extremamente longo, sinalizando o truncamento ao aluno.
@@ -109,13 +123,29 @@ class GeminiClient:
         )
         return response.text
 
+    def _call_model_with_retry(self, prompt: str) -> str:
+        from google.genai import errors as genai_errors
+
+        attempt = 0
+        while True:
+            try:
+                return self._call_model(prompt)
+            except genai_errors.ServerError as exc:
+                attempt += 1
+                if attempt > MAX_SERVER_ERROR_RETRIES:
+                    raise GeminiCommunicationError(
+                        f"A API Gemini está indisponível no momento (erro de servidor: "
+                        f"{exc}). Tentamos {attempt} vezes automaticamente nesta rodada; "
+                        "tente de novo em alguns instantes."
+                    ) from exc
+                time.sleep(RETRY_BACKOFF_SECONDS * attempt)  # backoff simples
+            except Exception as exc:  # falha de rede/timeout/autenticação etc. (FR-012)
+                raise GeminiCommunicationError(
+                    f"Falha ao comunicar com a API Gemini: {exc}"
+                ) from exc
+
     def generate(self, prompt: str) -> Dict[str, Any]:
-        try:
-            raw_text = self._call_model(prompt)
-        except Exception as exc:  # falha de rede/timeout/autenticação etc. (FR-012)
-            raise GeminiCommunicationError(
-                f"Falha ao comunicar com a API Gemini: {exc}"
-            ) from exc
+        raw_text = self._call_model_with_retry(prompt)
 
         try:
             data = json.loads(raw_text)

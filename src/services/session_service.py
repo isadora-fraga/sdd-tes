@@ -16,6 +16,12 @@ from src.services.validators import InvalidCodeError
 
 MAX_TOTAL_ATTEMPTS_PER_ROUND = 2  # 1 tentativa inicial + no máximo 1 regeneração (Princípio II)
 
+# Teto de FR-008: sem isso, nada impede pedir um hint_limit absurdo (ex.: 500000), o que
+# fere o Princípio II (uso econômico da API). Validado aqui — a autoridade real é o
+# servidor, nunca o front-end (que só clampa por conveniência de UX).
+MIN_HINT_LIMIT = 1
+MAX_HINT_LIMIT = 15
+
 FALLBACK_QUESTIONS = (
     "O que você espera que essa parte do código faça, passo a passo, antes de rodar?",
     "Se você explicasse essa lógica em voz alta para alguém, onde a explicação travaria?",
@@ -44,6 +50,12 @@ def start_session(
     """FR-001: cria a sessão; FR-010: atalho de sucesso imediato quando os testes já passam."""
     if not exercise_statement or not exercise_statement.strip():
         raise InvalidCodeError("O enunciado do exercício não pode estar vazio.")
+
+    if not MIN_HINT_LIMIT <= hint_limit <= MAX_HINT_LIMIT:
+        raise ValueError(
+            f"Limite de dicas deve estar entre {MIN_HINT_LIMIT} e {MAX_HINT_LIMIT} "
+            f"(recebido: {hint_limit})."
+        )
 
     validators.validate_python_syntax(code)
 

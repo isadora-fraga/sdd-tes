@@ -7,6 +7,22 @@ from src.models.session import SessionStatus
 from src.services import session_service
 
 
+@pytest.mark.parametrize("bad_limit", [0, -1, 16, 500000])
+def test_hint_limit_outside_bounds_is_rejected(bad_limit):
+    with pytest.raises(ValueError):
+        session_service.start_session(
+            exercise_statement="x", code="def f():\n    return 0\n", hint_limit=bad_limit
+        )
+
+
+@pytest.mark.parametrize("ok_limit", [1, 5, 15])
+def test_hint_limit_within_bounds_is_accepted(ok_limit):
+    session = session_service.start_session(
+        exercise_statement="x", code="def f():\n    return 0\n", hint_limit=ok_limit
+    )
+    assert session.hint_limit == ok_limit
+
+
 class CountingFakeClient:
     def __init__(self, question="Isso funciona para todos os casos?", stage="logic_error"):
         self.call_count = 0
